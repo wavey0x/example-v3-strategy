@@ -5,7 +5,12 @@ import {BaseTokenizedStrategy} from "@tokenized-strategy/BaseTokenizedStrategy.s
 
 import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-
+interface IVault {
+    function deposit(uint) external returns (uint);
+    function withdraw(uint) external returns (uint);
+    function decimals() external returns (uint);
+    function pricePerShare() external returns (uint);
+}
 // Import interfaces for many popular DeFi projects, or add your own!
 //import "../interfaces/<protocol>/<Interface>.sol";
 
@@ -25,10 +30,14 @@ import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol
 contract Strategy is BaseTokenizedStrategy {
     using SafeERC20 for ERC20;
 
+    IVault public targetVault = IVault(0xa258C4606Ca8206D8aA700cE2143D7db854D168c);
+    uint public test = 1999;
     constructor(
         address _asset,
         string memory _name
-    ) BaseTokenizedStrategy(_asset, _name) {}
+    ) BaseTokenizedStrategy(_asset, _name) {
+        ERC20(_asset).approve(address(targetVault), type(uint).max);
+    }
 
     /*//////////////////////////////////////////////////////////////
                 NEEDED TO BE OVERRIDEN BY STRATEGIST
@@ -49,6 +58,7 @@ contract Strategy is BaseTokenizedStrategy {
         // TODO: implement deposit logice EX:
         //
         //      lendingpool.deposit(asset, _amount ,0);
+        targetVault.deposit(_amount);
     }
 
     /**
@@ -76,6 +86,8 @@ contract Strategy is BaseTokenizedStrategy {
         // TODO: implement withdraw logic EX:
         //
         //      lendingPool.withdraw(asset, _amount);
+        uint amount = _amount * 10**targetVault.decimals() / targetVault.pricePerShare();
+        targetVault.withdraw(amount);
     }
 
     /**
@@ -109,7 +121,11 @@ contract Strategy is BaseTokenizedStrategy {
         //
         //      _claminAndSellRewards();
         //      _totalAssets = aToken.balanceof(address(this)) + ERC20(asset).balanceOf(address(this));
-        _totalAssets = ERC20(asset).balanceOf(address(this));
+        _totalAssets = ERC20(asset).balanceOf(address(this)) + totalInvested();
+    }
+
+    function totalInvested() internal returns (uint) {
+        return ERC20(address(targetVault)).balanceOf(address(this)) * targetVault.pricePerShare() / 10 ** targetVault.decimals();
     }
 
     /*//////////////////////////////////////////////////////////////

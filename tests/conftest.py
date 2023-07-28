@@ -1,6 +1,7 @@
-import pytest
-from ape import Contract, project
-
+import pytest, json
+from ape import Contract, project, networks
+from ethpm_types import ContractType
+from eth_utils import encode_hex, keccak, to_hex, to_bytes
 
 ############ CONFIG FIXTURES ############
 
@@ -8,7 +9,7 @@ from ape import Contract, project
 # You may need to add the token address to `tokens` fixture.
 @pytest.fixture(scope="session")
 def asset(tokens):
-    yield Contract(tokens["dai"])
+    yield Contract(tokens["weth"])
 
 
 # Adjust the amount that should be used for testing based on `asset`.
@@ -96,9 +97,20 @@ def set_protocol_fee(factory):
 @pytest.fixture(scope="session")
 def create_strategy(management, keeper, rewards):
     def create_strategy(asset, performanceFee=1_000):
+        
+        str_to_slot = lambda text: int(keccak(text=text).hex(), 16)
+        slot = str_to_slot("yearn.base.strategy.storage") - 1
+        # networks.provider.get_storage_at(address, slot)
         strategy = management.deploy(project.Strategy, asset, "yStrategy-Example")
-        strategy = project.IStrategyInterface.at(strategy.address)
-
+        strategy_abi = json.loads(strategy.contract_type.json(include={'abi'}))
+        tokenized_abi = json.loads(project.load_contracts()['TokenizedStrategy'].contract_type.json(include={'abi'}))
+        merged_abi = {'abi': tokenized_abi['abi'] + strategy_abi['abi']}
+        strategy = Contract(strategy.address, contract_type=ContractType.parse_raw(json.dumps(merged_abi)))
+        
+        print(f'🚀🚀🚀🚀🚀 {strategy.targetVault()}')
+        print(f'🚀🚀🚀🚀🚀 {strategy.test()}')
+        # strategy = project.Strategy.at(strategy.address)
+        strategy = project.TokenizedStrategy.at(strategy.address)
         strategy.setKeeper(keeper, sender=management)
         strategy.setPerformanceFeeRecipient(rewards, sender=management)
         strategy.setPerformanceFee(performanceFee, sender=management)
@@ -147,3 +159,11 @@ def deposit(strategy, asset, user, amount):
 @pytest.fixture(scope="session")
 def RELATIVE_APPROX():
     yield 1e-5
+
+def merge_abis(dict1, dict2):
+    for key, value in dict2.items():
+        if key in dict1 and isinstance(dict1[key], dict) and isinstance(value, dict):
+            merge_abis(dict1[key], value)
+        else:
+            dict1[key] = value
+    return dict1

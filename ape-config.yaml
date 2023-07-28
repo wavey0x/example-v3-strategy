@@ -3,9 +3,10 @@ name: tokenized-strategy-ape-mix
 plugins:
   - name: solidity
   - name: etherscan
-  - name: hardhat
   - name: infura
   - name: alchemy
+  - name: vyper
+  - name: foundry
 
 default_ecosystem: ethereum
 
@@ -33,9 +34,9 @@ solidity:
 ethereum:
   default_network: mainnet-fork
   mainnet_fork:
-    default_provider: hardhat
+    default_provider: foundry
 
-hardhat:
+foundry:
   fork:
     ethereum:
       mainnet:

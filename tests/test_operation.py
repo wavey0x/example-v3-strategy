@@ -1,9 +1,7 @@
-import ape
 from ape import Contract
 from utils.constants import MAX_BPS
 from utils.checks import check_strategy_totals
 from utils.helpers import days_to_secs, increase_time, withdraw_and_check
-import pytest
 
 
 def test__operation(
@@ -16,11 +14,18 @@ def test__operation(
     RELATIVE_APPROX,
 ):
     user_balance_before = asset.balanceOf(user)
+    assert False
 
     # Deposit to the strategy
     deposit()
-
+    print('🚀',strategy.totalAssets())
+    print('🚀',amount)
+    print('🚀',asset.address)
+    print('🚀','debt',strategy.totalDebt())
+    
     # TODO: Implement logic so totalDebt ends > 0
+
+    assert False
     check_strategy_totals(
         strategy, total_assets=amount, total_debt=0, total_idle=amount
     )
