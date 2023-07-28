@@ -14,18 +14,11 @@ def test__operation(
     RELATIVE_APPROX,
 ):
     user_balance_before = asset.balanceOf(user)
-    assert False
 
+    assert False
     # Deposit to the strategy
     deposit()
-    print('🚀',strategy.totalAssets())
-    print('🚀',amount)
-    print('🚀',asset.address)
-    print('🚀','debt',strategy.totalDebt())
-    
-    # TODO: Implement logic so totalDebt ends > 0
 
-    assert False
     check_strategy_totals(
         strategy, total_assets=amount, total_debt=0, total_idle=amount
     )
